@@ -1,160 +1,311 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8" />
-  <title>ESP32 Relay Control Dashboard</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <script src="https://cdn.tailwindcss.com"></script>
+    <meta charset="UTF-8" />
+    <title>Sistem Kontrol Relay & Sensor</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #0c1236;
+            background-image: radial-gradient(at 50% 10%, #1e3a8a, #0c1236);
+        }
+        .bg-card {
+            background-color: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .tab-btn.active {
+            @apply bg-white/10;
+        }
+    </style>
 </head>
-<body class="bg-gray-100 flex flex-col min-h-screen justify-between font-sans text-center p-4">
+<body class="font-sans text-white">
 
-  <h1 class="text-3xl font-bold mt-8 mb-4 text-gray-800">ESP32 Relay Control Dashboard</h1>
+    <div class="min-h-screen flex flex-col items-center justify-center p-4">
 
-    <div id="loginForm" class="max-w-md w-full mx-auto bg-white p-8 rounded-2xl shadow-xl mt-20">
-    <input type="email" id="email" placeholder="Enter Email" required class="w-full py-3 px-4 my-2 text-base border-2 border-gray-300 rounded-xl focus:outline-none focus:border-blue-500 transition-colors duration-300" />
-    <input type="password" id="password" placeholder="Enter Password" required class="w-full py-3 px-4 my-2 text-base border-2 border-gray-300 rounded-xl focus:outline-none focus:border-blue-500 transition-colors duration-300" />
-    <button id="loginBtn" class="w-full bg-blue-600 text-white py-3 text-lg rounded-xl cursor-pointer hover:bg-blue-700 transition-colors duration-300">Login</button>
-  </div>
+        <div id="loginForm" class="w-full max-w-sm p-8 rounded-2xl shadow-lg bg-card">
+            <div class="flex flex-col items-center mb-6">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-12 h-12 text-blue-500">
+                    <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z" clip-rule="evenodd" />
+                </svg>
+                <h1 class="text-3xl font-bold mt-4">Sistem Kontrol Relay & Sensor</h1>
+                <p class="text-gray-400 text-sm">Silakan login untuk mengakses sistem</p>
+            </div>
+            <input type="email" id="email" placeholder="Email" required class="w-full p-3 mb-4 rounded-lg bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200" />
+            <input type="password" id="password" placeholder="Password" required class="w-full p-3 mb-6 rounded-lg bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200" />
+            <button id="loginBtn" class="w-full py-3 rounded-lg font-bold text-white bg-blue-600 hover:bg-blue-700 transition-colors duration-200">Login</button>
+            <p class="text-center text-xs mt-4 text-gray-400">Demo: admin / admin123</p>
+        </div>
 
-    <div id="dashboard" class="hidden">
-    <div class="relay-container max-w-5xl mx-auto flex flex-wrap justify-center mt-8 gap-4">
-      <div class="relay-card inline-block bg-white p-6 m-2 rounded-2xl shadow-md w-56">
-        <h2 class="text-lg font-semibold mb-2">Relay 1</h2>
-        <p class="mb-2 text-gray-600">Status: <span id="status1" class="font-medium">Loading...</span></p>
-        <button id="btn1" class="py-2 px-4 border-none rounded-xl text-white bg-blue-600 cursor-pointer text-base w-11/12 transition-colors duration-300 hover:opacity-80">Toggle</button>
-      </div>
+        <div id="dashboard" class="hidden w-full max-w-6xl">
+            <header class="flex justify-between items-center py-4 mb-6">
+                <h1 class="text-2xl font-bold">Relay Control System</h1>
+                <span class="text-sm text-red-500">Disconnected</span>
+            </header>
 
-      <div class="relay-card inline-block bg-white p-6 m-2 rounded-2xl shadow-md w-56">
-        <h2 class="text-lg font-semibold mb-2">Relay 2</h2>
-        <p class="mb-2 text-gray-600">Status: <span id="status2" class="font-medium">Loading...</span></p>
-        <button id="btn2" class="py-2 px-4 border-none rounded-xl text-white bg-blue-600 cursor-pointer text-base w-11/12 transition-colors duration-300 hover:opacity-80">Toggle</button>
-      </div>
+            <div class="flex justify-start space-x-2 p-2 bg-gray-800/50 rounded-lg mb-6">
+                <button id="manual-tab" class="tab-btn px-4 py-2 rounded-lg transition-colors duration-200 active">Manual</button>
+                <button id="schedule-tab" class="tab-btn px-4 py-2 rounded-lg transition-colors duration-200">Jadwal</button>
+                <button id="monitor-tab" class="tab-btn px-4 py-2 rounded-lg transition-colors duration-200">Monitor</button>
+                <button id="logoutBtn" class="tab-btn px-4 py-2 rounded-lg transition-colors duration-200">Logout</button>
+            </div>
 
-      <div class="relay-card inline-block bg-white p-6 m-2 rounded-2xl shadow-md w-56">
-        <h2 class="text-lg font-semibold mb-2">Relay 3</h2>
-        <p class="mb-2 text-gray-600">Status: <span id="status3" class="font-medium">Loading...</span></p>
-        <button id="btn3" class="py-2 px-4 border-none rounded-xl text-white bg-blue-600 cursor-pointer text-base w-11/12 transition-colors duration-300 hover:opacity-80">Toggle</button>
-      </div>
+            <div id="manual-section" class="p-8 rounded-lg shadow-xl bg-card">
+                <h2 class="text-xl font-bold mb-6">Manual Control</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div class="p-6 rounded-lg text-center bg-card">
+                        <h3 class="text-lg font-bold mb-4">Relay 1</h3>
+                        <div class="mb-4">
+                            <span class="text-sm font-semibold text-gray-400">Status: </span>
+                            <span id="status1" class="font-bold text-lg">Loading...</span>
+                        </div>
+                        <button id="btn1" class="w-full py-3 px-4 rounded-lg font-bold text-white transition-colors duration-300">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" class="w-6 h-6 inline-block mr-2">
+                                <path d="M11 21h2a1 1 0 0 0 1-1v-1a1 1 0 0 0-2 0v1a1 1 0 0 1-1 1zm-3.5-3.5h-1a1 1 0 0 0-1 1v1a1 1 0 0 0 2 0v-1a1 1 0 0 1 1-1zm10 0h-1a1 1 0 0 0-1 1v1a1 1 0 0 0 2 0v-1a1 1 0 0 1 1-1zm-8.5-6.5a6 6 0 1 0 6 6h-6a6 6 0 0 0-6-6zm0-10a1 1 0 0 0-1 1v1a1 1 0 0 0 2 0V2a1 1 0 0 0-1-1zm-3.5 3.5h-1a1 1 0 0 0-1 1v1a1 1 0 0 0 2 0v-1a1 1 0 0 1 1-1zm10 0h-1a1 1 0 0 0-1 1v1a1 1 0 0 0 2 0v-1a1 1 0 0 1 1-1z"/>
+                            </svg>
+                            Toggle
+                        </button>
+                        <div class="mt-2 text-xs text-center text-gray-400">
+                            Jadwal: <span id="schedule-status1">OFF</span>
+                        </div>
+                    </div>
+                    <div class="p-6 rounded-lg text-center bg-card">
+                        <h3 class="text-lg font-bold mb-4">Relay 2</h3>
+                        <div class="mb-4">
+                            <span class="text-sm font-semibold text-gray-400">Status: </span>
+                            <span id="status2" class="font-bold text-lg">Loading...</span>
+                        </div>
+                        <button id="btn2" class="w-full py-3 px-4 rounded-lg font-bold text-white transition-colors duration-300">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" class="w-6 h-6 inline-block mr-2">
+                                <path d="M11 21h2a1 1 0 0 0 1-1v-1a1 1 0 0 0-2 0v1a1 1 0 0 1-1 1zm-3.5-3.5h-1a1 1 0 0 0-1 1v1a1 1 0 0 0 2 0v-1a1 1 0 0 1 1-1zm10 0h-1a1 1 0 0 0-1 1v1a1 1 0 0 0 2 0v-1a1 1 0 0 1 1-1zm-8.5-6.5a6 6 0 1 0 6 6h-6a6 6 0 0 0-6-6zm0-10a1 1 0 0 0-1 1v1a1 1 0 0 0 2 0V2a1 1 0 0 0-1-1zm-3.5 3.5h-1a1 1 0 0 0-1 1v1a1 1 0 0 0 2 0v-1a1 1 0 0 1 1-1zm10 0h-1a1 1 0 0 0-1 1v1a1 1 0 0 0 2 0v-1a1 1 0 0 1 1-1z"/>
+                            </svg>
+                            Toggle
+                        </button>
+                        <div class="mt-2 text-xs text-center text-gray-400">
+                            Jadwal: <span id="schedule-status2">OFF</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-      <div class="relay-card inline-block bg-white p-6 m-2 rounded-2xl shadow-md w-56">
-        <h2 class="text-lg font-semibold mb-2">Relay 4</h2>
-        <p class="mb-2 text-gray-600">Status: <span id="status4" class="font-medium">Loading...</span></p>
-        <button id="btn4" class="py-2 px-4 border-none rounded-xl text-white bg-blue-600 cursor-pointer text-base w-11/12 transition-colors duration-300 hover:opacity-80">Toggle</button>
-      </div>
-    </div>
+            <div id="schedule-section" class="p-8 rounded-lg shadow-xl bg-card hidden">
+                <h2 class="text-xl font-bold mb-6">Atur Jadwal Otomatis</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div class="p-6 rounded-lg bg-card">
+                        <h3 class="text-lg font-bold mb-4 text-center">Jadwal Relay 1</h3>
+                        <label for="on-time-1" class="block text-gray-400 mb-2">Waktu ON:</label>
+                        <input type="time" id="on-time-1" class="w-full p-2 rounded-lg bg-white/10 text-white focus:outline-none mb-4" />
+                        <label for="off-time-1" class="block text-gray-400 mb-2">Waktu OFF:</label>
+                        <input type="time" id="off-time-1" class="w-full p-2 rounded-lg bg-white/10 text-white focus:outline-none mb-4" />
+                        <button id="save-schedule-1" class="w-full py-2 rounded-lg font-bold text-white bg-green-600 hover:bg-green-700 transition-colors duration-200">Simpan Jadwal</button>
+                        <button id="clear-schedule-1" class="w-full py-2 mt-2 rounded-lg font-bold text-white bg-red-600 hover:bg-red-700 transition-colors duration-200">Hapus Jadwal</button>
+                    </div>
+                    <div class="p-6 rounded-lg bg-card">
+                        <h3 class="text-lg font-bold mb-4 text-center">Jadwal Relay 2</h3>
+                        <label for="on-time-2" class="block text-gray-400 mb-2">Waktu ON:</label>
+                        <input type="time" id="on-time-2" class="w-full p-2 rounded-lg bg-white/10 text-white focus:outline-none mb-4" />
+                        <label for="off-time-2" class="block text-gray-400 mb-2">Waktu OFF:</label>
+                        <input type="time" id="off-time-2" class="w-full p-2 rounded-lg bg-white/10 text-white focus:outline-none mb-4" />
+                        <button id="save-schedule-2" class="w-full py-2 rounded-lg font-bold text-white bg-green-600 hover:bg-green-700 transition-colors duration-200">Simpan Jadwal</button>
+                        <button id="clear-schedule-2" class="w-full py-2 mt-2 rounded-lg font-bold text-white bg-red-600 hover:bg-red-700 transition-colors duration-200">Hapus Jadwal</button>
+                    </div>
+                </div>
+            </div>
 
-    <button id="allOffBtn" class="max-w-xs w-11/12 py-3 px-6 text-base border-none rounded-xl cursor-pointer mt-8 mx-auto block text-white bg-red-600 hover:bg-red-700 transition-colors duration-300">All OFF</button>
-    <button id="logoutBtn" class="max-w-xs w-11/12 py-3 px-6 text-base border-none rounded-xl cursor-pointer mt-4 mx-auto block text-white bg-gray-600 hover:bg-gray-700 transition-colors duration-300">Logout</button>
-  </div>
+            <div id="monitor-section" class="p-8 rounded-lg shadow-xl bg-card hidden">
+                <h2 class="text-xl font-bold mb-6">Monitor Sensor</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="p-6 rounded-lg text-center bg-card">
+                        <h3 class="text-lg font-bold mb-2">Suhu</h3>
+                        <p class="text-4xl font-bold" id="temp-value">--°C</p>
+                    </div>
+                    <div class="p-6 rounded-lg text-center bg-card">
+                        <h3 class="text-lg font-bold mb-2">Kelembaban</h3>
+                        <p class="text-4xl font-bold" id="humidity-value">--%</p>
+                    </div>
+                    <div class="p-6 rounded-lg text-center bg-card">
+                        <h3 class="text-lg font-bold mb-2">Level Air</h3>
+                        <p class="text-4xl font-bold" id="water-level-value">-- L</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
 
-  <footer class="text-sm text-gray-500 py-2 mt-auto">
-    Created by Nur Djaya Atmaja
-  </footer>
+    <script>
+        // Firebase config
+        const firebaseConfig = {
+            apiKey: "AIzaSyBkh1oJqlxmGECWMrMhFJP8_q-UllqArfw",
+            authDomain: "tesdjaya.firebaseapp.com",
+            databaseURL: "https://tesdjaya-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "tesdjaya",
+            storageBucket: "tesdjaya.firebasestorage.app",
+            messagingSenderId: "212621349012",
+            appId: "1:212621349012:web:327f9ba9fc1ccdb9546481",
+            measurementId: "G-ENW0043THE"
+        };
 
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+        firebase.initializeApp(firebaseConfig);
 
-  <script>
-    // Firebase config
-    const firebaseConfig = {
-        apiKey: "AIzaSyBkh1oJqlxmGECWMrMhFJP8_q-UllqArfw",
-        authDomain: "tesdjaya.firebaseapp.com",
-        databaseURL: "https://tesdjaya-default-rtdb.asia-southeast1.firebasedatabase.app",
-        projectId: "tesdjaya",
-        storageBucket: "tesdjaya.firebasestorage.app",
-        messagingSenderId: "212621349012",
-        appId: "1:212621349012:web:327f9ba9fc1ccdb9546481",
-        measurementId: "G-ENW0043THE"
-    };
+        const allowedEmail = "djgtry@gmail.com";
+        const allowedPassword = "Djaya123";
 
-    firebase.initializeApp(firebaseConfig);
+        const loginForm = document.getElementById("loginForm");
+        const dashboard = document.getElementById("dashboard");
+        const manualSection = document.getElementById("manual-section");
+        const scheduleSection = document.getElementById("schedule-section");
+        const monitorSection = document.getElementById("monitor-section");
+        const loginBtn = document.getElementById("loginBtn");
 
-    // Predefined login credentials (can be replaced with your logic)
-    const allowedEmail = "djgtry@gmail.com";
-    const allowedPassword = "Djaya123";
+        document.getElementById("manual-tab").addEventListener("click", () => showSection('manual'));
+        document.getElementById("schedule-tab").addEventListener("click", () => showSection('schedule'));
+        document.getElementById("monitor-tab").addEventListener("click", () => showSection('monitor'));
 
-    const loginForm = document.getElementById("loginForm");
-    const dashboard = document.getElementById("dashboard");
-    const loginBtn = document.getElementById("loginBtn");
+        function showSection(sectionId) {
+            manualSection.classList.add("hidden");
+            scheduleSection.classList.add("hidden");
+            monitorSection.classList.add("hidden");
+            document.getElementById(`${sectionId}-section`).classList.remove("hidden");
+            
+            // Update active tab style
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`${sectionId}-tab`).classList.add('active');
+        }
 
-    loginBtn.addEventListener("click", () => {
-      const email = document.getElementById("email").value.trim();
-      const password = document.getElementById("password").value;
+        loginBtn.addEventListener("click", () => {
+            const email = document.getElementById("email").value.trim();
+            const password = document.getElementById("password").value;
 
-      if (!email || !password) {
-        alert("Please enter email and password.");
-        return;
-      }
+            if (!email || !password) {
+                alert("Please enter email and password.");
+                return;
+            }
 
-      // Check hardcoded credentials first
-      if(email === allowedEmail && password === allowedPassword){
-        // Sign in with Firebase
-        firebase.auth().signInWithEmailAndPassword(email, password)
-          .then(userCredential => {
-            console.log("Signed in as", userCredential.user.email);
-            loginForm.style.display = "none";
-            dashboard.style.display = "block";
-            startRelayControl();
-          })
-          .catch(error => {
-            alert("Firebase login failed: " + error.message);
-          });
-      } else {
-        alert("Invalid email or password.");
-      }
-    });
+            if(email === allowedEmail && password === allowedPassword){
+                firebase.auth().signInWithEmailAndPassword(email, password)
+                    .then(userCredential => {
+                        console.log("Signed in as", userCredential.user.email);
+                        loginForm.classList.add("hidden");
+                        dashboard.classList.remove("hidden");
+                        startRelayControl();
+                        startScheduleControl();
+                        startSensorMonitor();
+                    })
+                    .catch(error => {
+                        alert("Firebase login failed: " + error.message);
+                    });
+            } else {
+                alert("Invalid email or password.");
+            }
+        });
 
-    function startRelayControl() {
-      const db = firebase.database();
+        function startRelayControl() {
+            const db = firebase.database();
+            const relays = [
+                { id: 1, path: "relay1" },
+                { id: 2, path: "relay2" },
+            ];
 
-      const relays = [
-        { id: 1, path: "relay1" },
-        { id: 2, path: "relay2" },
-        { id: 3, path: "relay3" },
-        { id: 4, path: "relay4" },
-      ];
+            relays.forEach(relay => {
+                const statusText = document.getElementById(`status${relay.id}`);
+                const toggleButton = document.getElementById(`btn${relay.id}`);
+                const relayRef = db.ref("/" + relay.path);
 
-      relays.forEach(relay => {
-        const statusText = document.getElementById(`status${relay.id}`);
-        const toggleButton = document.getElementById(`btn${relay.id}`);
-        const relayRef = db.ref("/" + relay.path);
+                relayRef.on("value", (snapshot) => {
+                    const state = snapshot.val();
+                    statusText.innerText = state ? "ON" : "OFF";
+                    toggleButton.classList.remove('bg-green-600', 'bg-red-600');
+                    toggleButton.classList.add(state ? 'bg-green-600' : 'bg-red-600');
+                });
 
-        relayRef.on("value", (snapshot) => {
-          const state = snapshot.val();
-          statusText.innerText = state ? "ON" : "OFF";
-          
-          // Update class for Tailwind background color
-          toggleButton.classList.remove('bg-blue-600', 'bg-green-600');
-          toggleButton.classList.add(state ? 'bg-green-600' : 'bg-blue-600');
-        });
+                toggleButton.onclick = () => {
+                    relayRef.get().then(snap => {
+                        relayRef.set(!snap.val());
+                    });
+                };
+            });
+        }
 
-        toggleButton.onclick = () => {
-          relayRef.get().then(snap => {
-            relayRef.set(!snap.val());
-          });
-        };
-      });
+        function startScheduleControl() {
+            const db = firebase.database();
+            const scheduleRefs = [
+                { id: 1, onTime: "on-time-1", offTime: "off-time-1", path: "schedule/relay1" },
+                { id: 2, onTime: "on-time-2", offTime: "off-time-2", path: "schedule/relay2" },
+            ];
 
-      document.getElementById("allOffBtn").onclick = () => {
-        relays.forEach(relay => {
-          db.ref("/" + relay.path).set(false);
-        });
-      };
-    }
+            scheduleRefs.forEach(sched => {
+                const onInput = document.getElementById(sched.onTime);
+                const offInput = document.getElementById(sched.offTime);
+                const saveButton = document.getElementById(`save-schedule-${sched.id}`);
+                const clearButton = document.getElementById(`clear-schedule-${sched.id}`);
+                const scheduleStatus = document.getElementById(`schedule-status${sched.id}`);
+                const schedRef = db.ref(sched.path);
 
-    document.getElementById("logoutBtn").onclick = () => {
-      firebase.auth().signOut()
-        .then(() => {
-          dashboard.style.display = "none";
-          loginForm.style.display = "block";
-          document.getElementById("email").value = "";
-          document.getElementById("password").value = "";
-        })
-        .catch(error => {
-          alert("Logout failed: " + error.message);
-        });
-    };
-  </script>
+                // Load existing schedule
+                schedRef.on('value', snapshot => {
+                    const data = snapshot.val();
+                    if (data) {
+                        onInput.value = data.on;
+                        offInput.value = data.off;
+                        scheduleStatus.innerText = `ON ${data.on} | OFF ${data.off}`;
+                    } else {
+                        onInput.value = "";
+                        offInput.value = "";
+                        scheduleStatus.innerText = "OFF";
+                    }
+                });
+
+                saveButton.onclick = () => {
+                    schedRef.set({ on: onInput.value, off: offInput.value });
+                    alert(`Jadwal Relay ${sched.id} berhasil disimpan!`);
+                };
+                
+                clearButton.onclick = () => {
+                    schedRef.set(null);
+                    alert(`Jadwal Relay ${sched.id} berhasil dihapus.`);
+                };
+            });
+        }
+
+        function startSensorMonitor() {
+            const db = firebase.database();
+            const sensors = [
+                { id: "temp", path: "sensors/temperature", elementId: "temp-value", unit: "°C" },
+                { id: "humidity", path: "sensors/humidity", elementId: "humidity-value", unit: "%" },
+                { id: "water", path: "sensors/water_level", elementId: "water-level-value", unit: " L" },
+            ];
+            
+            sensors.forEach(sensor => {
+                const sensorRef = db.ref(sensor.path);
+                sensorRef.on("value", (snapshot) => {
+                    const value = snapshot.val();
+                    const element = document.getElementById(sensor.elementId);
+                    if (value !== null) {
+                        element.innerText = `${value}${sensor.unit}`;
+                    } else {
+                        element.innerText = `--${sensor.unit}`;
+                    }
+                });
+            });
+        }
+        
+        document.getElementById("logoutBtn").onclick = () => {
+            firebase.auth().signOut()
+                .then(() => {
+                    dashboard.classList.add("hidden");
+                    loginForm.classList.remove("hidden");
+                    document.getElementById("email").value = "";
+                    document.getElementById("password").value = "";
+                })
+                .catch(error => {
+                    alert("Logout failed: " + error.message);
+                });
+        };
+    </script>
 </body>
 </html>
