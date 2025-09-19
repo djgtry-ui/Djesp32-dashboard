@@ -18,6 +18,19 @@
         .tab-btn.active {
             @apply bg-white/10;
         }
+        /* Style untuk Gauge */
+        .gauge-bar-container {
+            width: 100%;
+            height: 20px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 9999px;
+            overflow: hidden;
+        }
+        .gauge-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #10b981, #3b82f6);
+            transition: width 0.5s ease-in-out;
+        }
     </style>
 </head>
 <body class="font-sans text-white">
@@ -168,7 +181,14 @@
                     </div>
                     <div class="p-6 rounded-lg text-center bg-card">
                         <h3 class="text-lg font-bold mb-2">Level Air</h3>
-                        <p class="text-4xl font-bold" id="water-level-value">-- L</p>
+                        <p class="text-2xl font-bold text-gray-400" id="water-level-cm">-- cm</p>
+                        <p class="text-4xl font-bold" id="water-volume-value">-- L</p>
+                        <div class="mt-4">
+                            <h3 class="text-sm font-semibold text-gray-400">Volume</h3>
+                            <div class="gauge-bar-container mt-2">
+                                <div id="volume-gauge" class="gauge-bar-fill"></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -324,14 +344,46 @@
             });
         }
 
+        // Fungsi baru untuk menghitung volume air
+        function calculateVolume(cm) {
+            // Rentang level: 20cm (1000L) hingga 1200cm (0L)
+            const minLevel = 20;
+            const maxLevel = 1200;
+            const maxVolume = 1000;
+
+            // Pastikan nilai cm berada dalam rentang
+            const clampedCm = Math.max(minLevel, Math.min(maxLevel, cm));
+            
+            // Rumus interpolasi linear: V = V_max - (V_max / (L_max - L_min)) * (L - L_min)
+            const volume = maxVolume - (maxVolume / (maxLevel - minLevel)) * (clampedCm - minLevel);
+
+            // Bulatkan ke 2 angka di belakang koma dan pastikan tidak negatif
+            return Math.max(0, volume.toFixed(0));
+        }
+
+        // Fungsi baru untuk menghitung persentase gauge
+        function calculatePercentage(cm) {
+            const minLevel = 20;
+            const maxLevel = 1200;
+            const clampedCm = Math.max(minLevel, Math.min(maxLevel, cm));
+            
+            // Persentase terbalik: 100% pada 20cm dan 0% pada 1200cm
+            const percentage = ((maxLevel - clampedCm) / (maxLevel - minLevel)) * 100;
+            
+            return Math.max(0, percentage.toFixed(0));
+        }
+
         function startSensorMonitor() {
             const db = firebase.database();
             const sensors = [
                 { id: "temp", path: "sensors/temperature", elementId: "temp-value", unit: "°C" },
                 { id: "humidity", path: "sensors/humidity", elementId: "humidity-value", unit: "%" },
-                { id: "water", path: "sensors/water_level", elementId: "water-level-value", unit: " cm" }, // Changed unit to cm
+                { id: "water", path: "sensors/water_level", elementId: "water-level-cm", unit: " cm" },
             ];
             
+            const waterVolumeElement = document.getElementById("water-volume-value");
+            const waterGaugeElement = document.getElementById("volume-gauge");
+
             sensors.forEach(sensor => {
                 const sensorRef = db.ref(sensor.path);
                 sensorRef.on("value", (snapshot) => {
@@ -339,8 +391,23 @@
                     const element = document.getElementById(sensor.elementId);
                     if (value !== null) {
                         element.innerText = `${value.toFixed(1)}${sensor.unit}`;
+                        
+                        if (sensor.id === "water") {
+                            // Hitung volume dan persentase
+                            const volume = calculateVolume(value);
+                            const percentage = calculatePercentage(value);
+                            
+                            // Perbarui tampilan volume dan gauge
+                            waterVolumeElement.innerText = `${volume} L`;
+                            waterGaugeElement.style.width = `${percentage}%`;
+                        }
                     } else {
                         element.innerText = `--${sensor.unit}`;
+                        
+                        if (sensor.id === "water") {
+                            waterVolumeElement.innerText = `-- L`;
+                            waterGaugeElement.style.width = `0%`;
+                        }
                     }
                 });
             });
