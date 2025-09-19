@@ -364,10 +364,10 @@
         // Fungsi baru untuk menghitung persentase gauge
         function calculatePercentage(cm) {
             const minLevel = 20;
-            const maxLevel = 1200;
+            const maxLevel = 120;
             const clampedCm = Math.max(minLevel, Math.min(maxLevel, cm));
             
-            // Persentase terbalik: 100% pada 20cm dan 0% pada 1200cm
+            // Persentase terbalik: 100% pada 20cm dan 0% pada 120cm
             const percentage = ((maxLevel - clampedCm) / (maxLevel - minLevel)) * 100;
             
             return Math.max(0, percentage.toFixed(0));
@@ -428,4 +428,5 @@
     </script>
 </body>
 </html>
+
 
