@@ -5,6 +5,8 @@
     <title>Sistem Kontrol Relay & Sensor</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.0/papaparse.min.js"></script>
     <style>
         body {
             background-color: #0c1236;
@@ -18,7 +20,6 @@
         .tab-btn.active {
             @apply bg-white/10;
         }
-        /* Style untuk Gauge */
         .gauge-bar-container {
             width: 100%;
             height: 20px;
@@ -31,10 +32,32 @@
             background: linear-gradient(90deg, #10b981, #3b82f6);
             transition: width 0.5s ease-in-out;
         }
+        /* Style untuk tab history */
+        .history-tab-btn.active {
+            background-color: #3b82f6;
+            color: white;
+        }
+        /* Style untuk dropdown (select) */
+        .select-dark {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .select-dark option {
+            background-color: #1e3a8a;
+            color: white;
+        }
+        /* Style untuk scrollbar tabel */
+        .table-scroll-container {
+            max-height: 250px; /* Tinggi maksimum tabel (sekitar 5-7 baris data) */
+            overflow-y: auto;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+        }
     </style>
 </head>
-<body class="font-sans text-white">
 
+<body class="font-sans text-white">
     <div class="min-h-screen flex flex-col items-center justify-center p-4">
 
         <div id="loginForm" class="w-full max-w-sm p-8 rounded-2xl shadow-lg bg-card">
@@ -42,129 +65,41 @@
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-12 h-12 text-blue-500">
                     <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z" clip-rule="evenodd" />
                 </svg>
-                <h1 class="text-3xl font-bold mt-4 text-center">SMART HOME CONTROLER</h1>
+                <h1 class="text-3xl font-bold mt-4 text-center">SMART HOME CONTROLLER</h1>
                 <p class="text-gray-400 text-sm">Silakan login untuk mengakses sistem</p>
             </div>
             <input type="email" id="email" placeholder="Email" required class="w-full p-3 mb-4 rounded-lg bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200" />
             <input type="password" id="password" placeholder="Password" required class="w-full p-3 mb-6 rounded-lg bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200" />
             <button id="loginBtn" class="w-full py-3 rounded-lg font-bold text-white bg-blue-600 hover:bg-blue-700 transition-colors duration-200">Login</button>
-            <p class="text-center text-xs mt-4 text-gray-400">Created By Nur Djaya</p>
+            <p id="login-error" class="text-red-500 text-center mt-2 hidden">Email atau password salah.</p>
         </div>
 
         <div id="dashboard" class="hidden w-full max-w-6xl">
             <header class="flex justify-between items-center py-4 mb-6">
                 <h1 class="text-2xl font-bold">Relay Control System</h1>
-                <span class="text-sm text-red-500">Disconnected</span>
+                <span id="connection-status" class="text-sm text-red-500">📡Disconnected</span>
             </header>
 
             <div class="flex justify-start space-x-2 p-2 bg-gray-800/50 rounded-lg mb-6">
                 <button id="manual-tab" class="tab-btn px-4 py-2 rounded-lg transition-colors duration-200 active">Manual</button>
                 <button id="schedule-tab" class="tab-btn px-4 py-2 rounded-lg transition-colors duration-200">Jadwal</button>
                 <button id="monitor-tab" class="tab-btn px-4 py-2 rounded-lg transition-colors duration-200">Monitor</button>
+                <button id="history-tab" class="tab-btn px-4 py-2 rounded-lg transition-colors duration-200">History</button>
                 <button id="logoutBtn" class="tab-btn px-4 py-2 rounded-lg transition-colors duration-200">Logout</button>
+            </div>
+            <div>
+                <p class="text-center text-xs mt-4 text-gray-400">Created By Nur Djaya</p>
             </div>
 
             <div id="manual-section" class="p-8 rounded-lg shadow-xl bg-card">
                 <h2 class="text-xl font-bold mb-6">Manual Control</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <div class="p-6 rounded-lg text-center bg-card">
-                        <h3 class="text-lg font-bold mb-4">Relay 1</h3>
-                        <div class="mb-4">
-                            <span class="text-sm font-semibold text-gray-400">Status: </span>
-                            <span id="status1" class="font-bold text-lg">Loading...</span>
-                        </div>
-                        <button id="btn1" class="w-full py-3 px-4 rounded-lg font-bold text-white transition-colors duration-300">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" class="w-6 h-6 inline-block mr-2"><path d="M11 21h2a1 1 0 0 0 1-1v-1a1 1 0 0 0-2 0v1a1 1 0 0 1-1 1zm-3.5-3.5h-1a1 1 0 0 0-1 1v1a1 1 0 0 0 2 0v-1a1 1 0 0 1 1-1zm10 0h-1a1 1 0 0 0-1 1v1a1 1 0 0 0 2 0v-1a1 1 0 0 1 1-1zm-8.5-6.5a6 6 0 1 0 6 6h-6a6 6 0 0 0-6-6zm0-10a1 1 0 0 0-1 1v1a1 1 0 0 0 2 0V2a1 1 0 0 0-1-1zm-3.5 3.5h-1a1 1 0 0 0-1 1v1a1 1 0 0 0 2 0v-1a1 1 0 0 1 1-1zm10 0h-1a1 1 0 0 0-1 1v1a1 1 0 0 0 2 0v-1a1 1 0 0 1 1-1z"/></svg>
-                            Toggle
-                        </button>
-                        <div class="mt-2 text-xs text-center text-gray-400">
-                            Jadwal: <span id="schedule-status1">OFF</span>
-                        </div>
-                    </div>
-                    <div class="p-6 rounded-lg text-center bg-card">
-                        <h3 class="text-lg font-bold mb-4">Relay 2</h3>
-                        <div class="mb-4">
-                            <span class="text-sm font-semibold text-gray-400">Status: </span>
-                            <span id="status2" class="font-bold text-lg">Loading...</span>
-                        </div>
-                        <button id="btn2" class="w-full py-3 px-4 rounded-lg font-bold text-white transition-colors duration-300">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" class="w-6 h-6 inline-block mr-2"><path d="M11 21h2a1 1 0 0 0 1-1v-1a1 1 0 0 0-2 0v1a1 1 0 0 1-1 1zm-3.5-3.5h-1a1 1 0 0 0-1 1v1a1 1 0 0 0 2 0v-1a1 1 0 0 1 1-1zm10 0h-1a1 1 0 0 0-1 1v1a1 1 0 0 0 2 0v-1a1 1 0 0 1 1-1zm-8.5-6.5a6 6 0 1 0 6 6h-6a6 6 0 0 0-6-6zm0-10a1 1 0 0 0-1 1v1a1 1 0 0 0 2 0V2a1 1 0 0 0-1-1zm-3.5 3.5h-1a1 1 0 0 0-1 1v1a1 1 0 0 0 2 0v-1a1 1 0 0 1 1-1zm10 0h-1a1 1 0 0 0-1 1v1a1 1 0 0 0 2 0v-1a1 1 0 0 1 1-1z"/></svg>
-                            Toggle
-                        </button>
-                        <div class="mt-2 text-xs text-center text-gray-400">
-                            Jadwal: <span id="schedule-status2">OFF</span>
-                        </div>
-                    </div>
-                    <div class="p-6 rounded-lg text-center bg-card">
-                        <h3 class="text-lg font-bold mb-4">Relay 3</h3>
-                        <div class="mb-4">
-                            <span class="text-sm font-semibold text-gray-400">Status: </span>
-                            <span id="status3" class="font-bold text-lg">Loading...</span>
-                        </div>
-                        <button id="btn3" class="w-full py-3 px-4 rounded-lg font-bold text-white transition-colors duration-300">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" class="w-6 h-6 inline-block mr-2"><path d="M11 21h2a1 1 0 0 0 1-1v-1a1 1 0 0 0-2 0v1a1 1 0 0 1-1 1zm-3.5-3.5h-1a1 1 0 0 0-1 1v1a1 1 0 0 0 2 0v-1a1 1 0 0 1 1-1zm10 0h-1a1 1 0 0 0-1 1v1a1 1 0 0 0 2 0v-1a1 1 0 0 1 1-1zm-8.5-6.5a6 6 0 1 0 6 6h-6a6 6 0 0 0-6-6zm0-10a1 1 0 0 0-1 1v1a1 1 0 0 0 2 0V2a1 1 0 0 0-1-1zm-3.5 3.5h-1a1 1 0 0 0-1 1v1a1 1 0 0 0 2 0v-1a1 1 0 0 1 1-1zm10 0h-1a1 1 0 0 0-1 1v1a1 1 0 0 0 2 0v-1a1 1 0 0 1 1-1z"/></svg>
-                            Toggle
-                        </button>
-                        <div class="mt-2 text-xs text-center text-gray-400">
-                            Jadwal: <span id="schedule-status3">OFF</span>
-                        </div>
-                    </div>
-                    <div class="p-6 rounded-lg text-center bg-card">
-                        <h3 class="text-lg font-bold mb-4">Relay 4</h3>
-                        <div class="mb-4">
-                            <span class="text-sm font-semibold text-gray-400">Status: </span>
-                            <span id="status4" class="font-bold text-lg">Loading...</span>
-                        </div>
-                        <button id="btn4" class="w-full py-3 px-4 rounded-lg font-bold text-white transition-colors duration-300">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" class="w-6 h-6 inline-block mr-2"><path d="M11 21h2a1 1 0 0 0 1-1v-1a1 1 0 0 0-2 0v1a1 1 0 0 1-1 1zm-3.5-3.5h-1a1 1 0 0 0-1 1v1a1 1 0 0 0 2 0v-1a1 1 0 0 1 1-1zm10 0h-1a1 1 0 0 0-1 1v1a1 1 0 0 0 2 0v-1a1 1 0 0 1 1-1zm-8.5-6.5a6 6 0 1 0 6 6h-6a6 6 0 0 0-6-6zm0-10a1 1 0 0 0-1 1v1a1 1 0 0 0 2 0V2a1 1 0 0 0-1-1zm-3.5 3.5h-1a1 1 0 0 0-1 1v1a1 1 0 0 0 2 0v-1a1 1 0 0 1 1-1zm10 0h-1a1 1 0 0 0-1 1v1a1 1 0 0 0 2 0v-1a1 1 0 0 1 1-1z"/></svg>
-                            Toggle
-                        </button>
-                        <div class="mt-2 text-xs text-center text-gray-400">
-                            Jadwal: <span id="schedule-status4">OFF</span>
-                        </div>
-                    </div>
+                <div id="relay-controls" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 </div>
             </div>
 
             <div id="schedule-section" class="p-8 rounded-lg shadow-xl bg-card hidden">
                 <h2 class="text-xl font-bold mb-6">Atur Jadwal Otomatis</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <div class="p-6 rounded-lg bg-card">
-                        <h3 class="text-lg font-bold mb-4 text-center">Jadwal Relay 1</h3>
-                        <label for="on-time-1" class="block text-gray-400 mb-2">Waktu ON:</label>
-                        <input type="time" id="on-time-1" class="w-full p-2 rounded-lg bg-white/10 text-white focus:outline-none mb-4" />
-                        <label for="off-time-1" class="block text-gray-400 mb-2">Waktu OFF:</label>
-                        <input type="time" id="off-time-1" class="w-full p-2 rounded-lg bg-white/10 text-white focus:outline-none mb-4" />
-                        <button id="save-schedule-1" class="w-full py-2 rounded-lg font-bold text-white bg-green-600 hover:bg-green-700 transition-colors duration-200">Simpan Jadwal</button>
-                        <button id="clear-schedule-1" class="w-full py-2 mt-2 rounded-lg font-bold text-white bg-red-600 hover:bg-red-700 transition-colors duration-200">Hapus Jadwal</button>
-                    </div>
-                    <div class="p-6 rounded-lg bg-card">
-                        <h3 class="text-lg font-bold mb-4 text-center">Jadwal Relay 2</h3>
-                        <label for="on-time-2" class="block text-gray-400 mb-2">Waktu ON:</label>
-                        <input type="time" id="on-time-2" class="w-full p-2 rounded-lg bg-white/10 text-white focus:outline-none mb-4" />
-                        <label for="off-time-2" class="block text-gray-400 mb-2">Waktu OFF:</label>
-                        <input type="time" id="off-time-2" class="w-full p-2 rounded-lg bg-white/10 text-white focus:outline-none mb-4" />
-                        <button id="save-schedule-2" class="w-full py-2 rounded-lg font-bold text-white bg-green-600 hover:bg-green-700 transition-colors duration-200">Simpan Jadwal</button>
-                        <button id="clear-schedule-2" class="w-full py-2 mt-2 rounded-lg font-bold text-white bg-red-600 hover:bg-red-700 transition-colors duration-200">Hapus Jadwal</button>
-                    </div>
-                    <div class="p-6 rounded-lg bg-card">
-                        <h3 class="text-lg font-bold mb-4 text-center">Jadwal Relay 3</h3>
-                        <label for="on-time-3" class="block text-gray-400 mb-2">Waktu ON:</label>
-                        <input type="time" id="on-time-3" class="w-full p-2 rounded-lg bg-white/10 text-white focus:outline-none mb-4" />
-                        <label for="off-time-3" class="block text-gray-400 mb-2">Waktu OFF:</label>
-                        <input type="time" id="off-time-3" class="w-full p-2 rounded-lg bg-white/10 text-white focus:outline-none mb-4" />
-                        <button id="save-schedule-3" class="w-full py-2 rounded-lg font-bold text-white bg-green-600 hover:bg-green-700 transition-colors duration-200">Simpan Jadwal</button>
-                        <button id="clear-schedule-3" class="w-full py-2 mt-2 rounded-lg font-bold text-white bg-red-600 hover:bg-red-700 transition-colors duration-200">Hapus Jadwal</button>
-                    </div>
-                    <div class="p-6 rounded-lg bg-card">
-                        <h3 class="text-lg font-bold mb-4 text-center">Jadwal Relay 4</h3>
-                        <label for="on-time-4" class="block text-gray-400 mb-2">Waktu ON:</label>
-                        <input type="time" id="on-time-4" class="w-full p-2 rounded-lg bg-white/10 text-white focus:outline-none mb-4" />
-                        <label for="off-time-4" class="block text-gray-400 mb-2">Waktu OFF:</label>
-                        <input type="time" id="off-time-4" class="w-full p-2 rounded-lg bg-white/10 text-white focus:outline-none mb-4" />
-                        <button id="save-schedule-4" class="w-full py-2 rounded-lg font-bold text-white bg-green-600 hover:bg-green-700 transition-colors duration-200">Simpan Jadwal</button>
-                        <button id="clear-schedule-4" class="w-full py-2 mt-2 rounded-lg font-bold text-white bg-red-600 hover:bg-red-700 transition-colors duration-200">Hapus Jadwal</button>
-                    </div>
+                <div id="schedule-forms" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 </div>
             </div>
 
@@ -180,7 +115,7 @@
                         <p class="text-4xl font-bold" id="humidity-value">--%</p>
                     </div>
                     <div class="p-6 rounded-lg text-center bg-card">
-                        <h3 class="text-lg font-bold mb-2">Level Air</h3>
+                        <h3 class="text-lg font-bold mb-2">Water Level</h3>
                         <p class="text-2xl font-bold text-gray-400" id="water-level-cm">-- cm</p>
                         <p class="text-4xl font-bold" id="water-volume-value">-- L</p>
                         <div class="mt-4">
@@ -192,241 +127,697 @@
                     </div>
                 </div>
             </div>
+
+<div id="history-section" class="hidden">
+    <div class="flex justify-center items-center space-x-4 mb-8">
+        <button id="chart-view-btn" class="py-2 px-4 rounded-lg font-bold text-white transition-colors duration-300 bg-white/10 active">Grafik</button>
+        <button id="table-view-btn" class="py-2 px-4 rounded-lg font-bold text-white transition-colors duration-300 bg-white/10">Tabel</button>
+    </div>
+    
+    <div class="flex justify-center space-x-4 mb-8">
+        <button id="history-relay-btn" class="history-tab-btn py-2 px-4 rounded-lg font-bold text-white bg-blue-600 transition-colors duration-300 active">Relay</button>
+        <button id="history-sensors-btn" class="history-tab-btn py-2 px-4 rounded-lg font-bold text-white bg-blue-600 transition-colors duration-300">Sensor</button>
+        <button id="history-water-btn" class="history-tab-btn py-2 px-4 rounded-lg font-bold text-white bg-blue-600 transition-colors duration-300">Water Level</button>
+    </div>
+
+    <div id="history-chart-views">
+        <div id="history-relay-chart-container" class="chart-container">
+            <h3 class="text-xl font-bold text-white/90 text-center mb-4">Grafik Log Relay</h3>
+            <canvas id="relayChart"></canvas>
+        </div>
+        <div id="history-sensors-chart-container" class="chart-container hidden">
+            <h3 class="text-xl font-bold text-white/90 text-center mb-4">Grafik Suhu & Kelembaban</h3>
+            <canvas id="sensorsChart"></canvas>
+        </div>
+        <div id="history-water-chart-container" class="chart-container hidden">
+            <h3 class="text-xl font-bold text-white/90 text-center mb-4">Grafik Water Level</h3>
+            <canvas id="waterChart"></canvas>
         </div>
     </div>
     
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+    <div id="history-table-views" class="hidden">
+        <div id="relay-filter-container" class="mb-4 hidden">
+         <label for="relay-filter" class="text-white/80">Filter Relay:</label>
+         <select id="relay-filter" class="ml-2 p-2 rounded-lg focus:outline-none select-dark">
+                <option value="all">Semua Relay</option>
+                <option value="Relay 1">Relay 1</option>
+                <option value="Relay 2">Relay 2</option>
+               <option value="Relay 3">Relay 3</option>
+               <option value="Relay 4">Relay 4</option>
+         </select>
+        </div>
+        <div id="history-table-container" class="table-scroll-container">
+        </div>
+    </div>  
+</div>
 
-    <script>
-        // Firebase config
-        const firebaseConfig = {
-            apiKey: "AIzaSyBkh1oJqlxmGECWMrMhFJP8_q-UllqArfw",
-            authDomain: "tesdjaya.firebaseapp.com",
-            databaseURL: "https://tesdjaya-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "tesdjaya",
-            storageBucket: "tesdjaya.firebasestorage.app",
-            messagingSenderId: "212621349012",
-            appId: "1:212621349012:web:327f9ba9fc1ccdb9546481",
-            measurementId: "G-ENW0043THE"
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.0/papaparse.min.js"></script>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyBkh1oJqlxmGECWMrMhFJP8_q-UllqArfw",
+        authDomain: "tesdjaya.firebaseapp.com",
+        databaseURL: "https://tesdjaya-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "tesdjaya",
+        storageBucket: "tesdjaya.firebasestorage.app",
+        messagingSenderId: "212621349012",
+        appId: "1:212621349012:web:327f9ba9fc1ccdb9546481",
+        measurementId: "G-ENW0043THE"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.database();
+
+    const loginForm = document.getElementById("loginForm");
+    const dashboard = document.getElementById("dashboard");
+    const manualSection = document.getElementById("manual-section");
+    const scheduleSection = document.getElementById("schedule-section");
+    const monitorSection = document.getElementById("monitor-section");
+    const historySection = document.getElementById("history-section");
+    const loginBtn = document.getElementById("loginBtn");
+    const logoutBtn = document.getElementById("logoutBtn");
+    const connectionStatus = document.getElementById('connection-status');
+    const loginError = document.getElementById('login-error');
+    const relayControlsContainer = document.getElementById('relay-controls');
+    const scheduleFormsContainer = document.getElementById('schedule-forms');
+
+    const postScriptURL = 'https://script.google.com/macros/s/AKfycbyisPR7Mg6xSbjMrZw3YQ37jXdzGtBaLxfhM_xmGEOv2G0VACTy9qdBar_gFsDc0BPX/exec';
+    const getScriptURL = 'https://script.google.com/macros/s/AKfycbyisPR7Mg6xSbjMrZw3YQ37jXdzGtBaLxfhM_xmGEOv2G0VACTy9qdBar_gFsDc0BPX/exec';
+
+    const tabs = {
+        'manual': manualSection,
+        'schedule': scheduleSection,
+        'monitor': monitorSection,
+        'history': historySection
+    };
+
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const sectionId = btn.id.replace('-tab', '');
+            showSection(sectionId);
+        });
+    });
+
+    function showSection(sectionId) {
+        Object.values(tabs).forEach(section => section.classList.add("hidden"));
+        tabs[sectionId].classList.remove("hidden");
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.getElementById(`${sectionId}-tab`).classList.add('active');
+        if (sectionId === 'history') {
+            loadHistoryData();
+        }
+    }
+    
+    // Periksa status autentikasi saat halaman dimuat
+    auth.onAuthStateChanged(user => {
+        if (user) {
+            // Jika ada pengguna yang login, tampilkan dashboard
+            loginForm.classList.add("hidden");
+            dashboard.classList.remove("hidden");
+            startRelayControl();
+            startScheduleControl();
+            startSensorMonitor();
+            showSection('manual');
+        } else {
+            // Jika tidak ada pengguna, tampilkan formulir login
+            dashboard.classList.add("hidden");
+            loginForm.classList.remove("hidden");
+        }
+    });
+    
+    loginBtn.addEventListener("click", () => {
+        const email = document.getElementById("email").value.trim();
+        const password = document.getElementById("password").value;
+        if (!email || !password) {
+            alert("Silakan masukkan email dan password.");
+            return;
+        }
+        auth.signInWithEmailAndPassword(email, password)
+            .then(() => {
+                loginError.classList.add("hidden");
+            })
+            .catch(error => {
+                console.error("Firebase login failed:", error.message);
+                loginError.innerText = "Email atau password salah.";
+                loginError.classList.remove("hidden");
+            });
+    });
+
+    logoutBtn.onclick = () => {
+        auth.signOut().then(() => {
+            console.log("User signed out.");
+        }).catch(error => {
+            console.error("Logout failed:", error.message);
+            alert("Logout gagal: " + error.message);
+        });
+    };
+
+    function createRelayCard(id) {
+        return `
+            <div class="p-6 rounded-lg text-center bg-card">
+                <h3 class="text-lg font-bold mb-4">Relay ${id}</h3>
+                <div class="mb-4">
+                    <span class="text-sm font-semibold text-gray-400">Status: </span>
+                    <span id="status${id}" class="font-bold text-lg">Loading...</span>
+                </div>
+                <button id="btn${id}" class="w-full py-3 px-4 rounded-lg font-bold text-white transition-colors duration-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" class="w-6 h-6 inline-block mr-2"><path d="M11 21h2a1 1 0 0 0 1-1v-1a1 1 0 0 0-2 0v1a1 1 0 0 1-1 1zm-3.5-3.5h-1a1 1 0 0 0-1 1v1a1 1 0 0 0 2 0v-1a1 1 0 0 1 1-1zm10 0h-1a1 1 0 0 0-1 1v1a1 1 0 0 0 2 0v-1a1 1 0 0 1 1-1zm-8.5-6.5a6 6 0 1 0 6 6h-6a6 6 0 0 0-6-6zm0-10a1 1 0 0 0-1 1v1a1 1 0 0 0 2 0V2a1 1 0 0 0-1-1zm-3.5 3.5h-1a1 1 0 0 0-1 1v1a1 1 0 0 0 2 0v-1a1 1 0 0 1 1-1zm10 0h-1a1 1 0 0 0-1 1v1a1 1 0 0 0 2 0v-1a1 1 0 0 1 1-1z"/></svg>
+                    Toggle
+                </button>
+                <div class="mt-2 text-xs text-center text-gray-400">
+                    Jadwal: <span id="schedule-status${id}">OFF</span>
+                </div>
+            </div>
+        `;
+    }
+    function createScheduleForm(id) {
+        return `
+            <div class="p-6 rounded-lg bg-card">
+                <h3 class="text-lg font-bold mb-4 text-center">Jadwal Relay ${id}</h3>
+                <label for="on-time-${id}" class="block text-gray-400 mb-2">Waktu ON:</label>
+                <input type="time" id="on-time-${id}" class="w-full p-2 rounded-lg bg-white/10 text-white focus:outline-none mb-4" />
+                <label for="off-time-${id}" class="block text-gray-400 mb-2">Waktu OFF:</label>
+                <input type="time" id="off-time-${id}" class="w-full p-2 rounded-lg bg-white/10 text-white focus:outline-none mb-4" />
+                <button id="save-schedule-${id}" class="w-full py-2 rounded-lg font-bold text-white bg-green-600 hover:bg-green-700 transition-colors duration-200">Simpan Jadwal</button>
+                <button id="clear-schedule-${id}" class="w-full py-2 mt-2 rounded-lg font-bold text-white bg-red-600 hover:bg-red-700 transition-colors duration-200">Hapus Jadwal</button>
+            </div>
+        `;
+    }
+
+    function sendDataToSheet(data) {
+        const formData = new URLSearchParams();
+        const fullData = {
+            type: data.type || '',
+            relayId: data.relayId || '',
+            status: data.status || '',
+            timerStatus: data.timerStatus || '',
+            timerOn: data.timerOn || '',
+            timerOff: data.timerOff || '',
+            temperature: data.temperature || '',
+            humidity: data.humidity || '',
+            waterLevel: data.waterLevel || ''
         };
 
-        firebase.initializeApp(firebaseConfig);
-
-        const allowedEmail = "djgtry@gmail.com";
-        const allowedPassword = "Djaya123";
-
-        const loginForm = document.getElementById("loginForm");
-        const dashboard = document.getElementById("dashboard");
-        const manualSection = document.getElementById("manual-section");
-        const scheduleSection = document.getElementById("schedule-section");
-        const monitorSection = document.getElementById("monitor-section");
-        const loginBtn = document.getElementById("loginBtn");
-        const statusHeader = document.querySelector('header span');
-
-        document.getElementById("manual-tab").addEventListener("click", () => showSection('manual'));
-        document.getElementById("schedule-tab").addEventListener("click", () => showSection('schedule'));
-        document.getElementById("monitor-tab").addEventListener("click", () => showSection('monitor'));
-
-        function showSection(sectionId) {
-            manualSection.classList.add("hidden");
-            scheduleSection.classList.add("hidden");
-            monitorSection.classList.add("hidden");
-            document.getElementById(`${sectionId}-section`).classList.remove("hidden");
-            
-            // Update active tab style
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            document.getElementById(`${sectionId}-tab`).classList.add('active');
-        }
-
-        loginBtn.addEventListener("click", () => {
-            const email = document.getElementById("email").value.trim();
-            const password = document.getElementById("password").value;
-
-            if (!email || !password) {
-                alert("Please enter email and password.");
-                return;
-            }
-
-            if(email === allowedEmail && password === allowedPassword){
-                firebase.auth().signInWithEmailAndPassword(email, password)
-                    .then(userCredential => {
-                        console.log("Signed in as", userCredential.user.email);
-                        loginForm.classList.add("hidden");
-                        dashboard.classList.remove("hidden");
-                        startRelayControl();
-                        startScheduleControl();
-                        startSensorMonitor();
-                    })
-                    .catch(error => {
-                        alert("Firebase login failed: " + error.message);
-                    });
-            } else {
-                alert("Invalid email or password.");
-            }
-        });
-
-        function startRelayControl() {
-            const db = firebase.database();
-            const relays = [
-                { id: 1, path: "relay1" },
-                { id: 2, path: "relay2" },
-                { id: 3, path: "relay3" },
-                { id: 4, path: "relay4" }
-            ];
-
-            relays.forEach(relay => {
-                const statusText = document.getElementById(`status${relay.id}`);
-                const toggleButton = document.getElementById(`btn${relay.id}`);
-                const relayRef = db.ref("/" + relay.path);
-
-                relayRef.on("value", (snapshot) => {
-                    const state = snapshot.val();
-                    if (state !== null) {
-                        statusHeader.innerText = "Connected";
-                        statusHeader.classList.remove('text-red-500');
-                        statusHeader.classList.add('text-green-500');
-                    }
-                    statusText.innerText = state ? "ON" : "OFF";
-                    toggleButton.classList.remove('bg-green-600', 'bg-red-600');
-                    toggleButton.classList.add(state ? 'bg-green-600' : 'bg-red-600');
-                });
-
-                toggleButton.onclick = () => {
-                    relayRef.get().then(snap => {
-                        relayRef.set(!snap.val());
-                    });
-                };
-            });
-        }
-
-        function startScheduleControl() {
-            const db = firebase.database();
-            const scheduleRefs = [
-                { id: 1, onTime: "on-time-1", offTime: "off-time-1", path: "schedule/relay1" },
-                { id: 2, onTime: "on-time-2", offTime: "off-time-2", path: "schedule/relay2" },
-                { id: 3, onTime: "on-time-3", offTime: "off-time-3", path: "schedule/relay3" },
-                { id: 4, onTime: "on-time-4", offTime: "off-time-4", path: "schedule/relay4" }
-            ];
-
-            scheduleRefs.forEach(sched => {
-                const onInput = document.getElementById(sched.onTime);
-                const offInput = document.getElementById(sched.offTime);
-                const saveButton = document.getElementById(`save-schedule-${sched.id}`);
-                const clearButton = document.getElementById(`clear-schedule-${sched.id}`);
-                const scheduleStatus = document.getElementById(`schedule-status${sched.id}`);
-                const schedRef = db.ref(sched.path);
-
-                // Load existing schedule
-                schedRef.on('value', snapshot => {
-                    const data = snapshot.val();
-                    if (data) {
-                        onInput.value = data.on;
-                        offInput.value = data.off;
-                        scheduleStatus.innerText = `ON ${data.on} | OFF ${data.off}`;
-                    } else {
-                        onInput.value = "";
-                        offInput.value = "";
-                        scheduleStatus.innerText = "OFF";
-                    }
-                });
-
-                saveButton.onclick = () => {
-                    schedRef.set({ on: onInput.value, off: offInput.value });
-                    alert(`Jadwal Relay ${sched.id} berhasil disimpan!`);
-                };
-                
-                clearButton.onclick = () => {
-                    schedRef.set(null);
-                    alert(`Jadwal Relay ${sched.id} berhasil dihapus.`);
-                };
-            });
-        }
-
-        // Fungsi baru untuk menghitung volume air
-        function calculateVolume(cm) {
-            // Rentang level: 20cm (1000L) hingga 120cm (0L)
-            const minLevel = 20;
-            const maxLevel = 120;
-            const maxVolume = 1000;
-
-            // Pastikan nilai cm berada dalam rentang
-            const clampedCm = Math.max(minLevel, Math.min(maxLevel, cm));
-            
-            // Rumus interpolasi linear: V = V_max - (V_max / (L_max - L_min)) * (L - L_min)
-            const volume = maxVolume - (maxVolume / (maxLevel - minLevel)) * (clampedCm - minLevel);
-
-            // Bulatkan ke 2 angka di belakang koma dan pastikan tidak negatif
-            return Math.max(0, volume.toFixed(0));
-        }
-
-        // Fungsi baru untuk menghitung persentase gauge
-        function calculatePercentage(cm) {
-            const minLevel = 20;
-            const maxLevel = 120;
-            const clampedCm = Math.max(minLevel, Math.min(maxLevel, cm));
-            
-            // Persentase terbalik: 100% pada 20cm dan 0% pada 120cm
-            const percentage = ((maxLevel - clampedCm) / (maxLevel - minLevel)) * 100;
-            
-            return Math.max(0, percentage.toFixed(0));
-        }
-
-        function startSensorMonitor() {
-            const db = firebase.database();
-            const sensors = [
-                { id: "temp", path: "sensors/temperature", elementId: "temp-value", unit: "°C" },
-                { id: "humidity", path: "sensors/humidity", elementId: "humidity-value", unit: "%" },
-                { id: "water", path: "sensors/water_level", elementId: "water-level-cm", unit: " cm" },
-            ];
-            
-            const waterVolumeElement = document.getElementById("water-volume-value");
-            const waterGaugeElement = document.getElementById("volume-gauge");
-
-            sensors.forEach(sensor => {
-                const sensorRef = db.ref(sensor.path);
-                sensorRef.on("value", (snapshot) => {
-                    const value = snapshot.val();
-                    const element = document.getElementById(sensor.elementId);
-                    if (value !== null) {
-                        element.innerText = `${value.toFixed(1)}${sensor.unit}`;
-                        
-                        if (sensor.id === "water") {
-                            // Hitung volume dan persentase
-                            const volume = calculateVolume(value);
-                            const percentage = calculatePercentage(value);
-                            
-                            // Perbarui tampilan volume dan gauge
-                            waterVolumeElement.innerText = `${volume} L`;
-                            waterGaugeElement.style.width = `${percentage}%`;
-                        }
-                    } else {
-                        element.innerText = `--${sensor.unit}`;
-                        
-                        if (sensor.id === "water") {
-                            waterVolumeElement.innerText = `-- L`;
-                            waterGaugeElement.style.width = `0%`;
-                        }
-                    }
-                });
-            });
+        for (const key in fullData) {
+            formData.append(key, fullData[key]);
         }
         
-        document.getElementById("logoutBtn").onclick = () => {
-            firebase.auth().signOut()
-                .then(() => {
-                    dashboard.classList.add("hidden");
-                    loginForm.classList.remove("hidden");
-                    document.getElementById("email").value = "";
-                    document.getElementById("password").value = "";
-                })
-                .catch(error => {
-                    alert("Logout failed: " + error.message);
+        fetch(postScriptURL, {
+            method: 'POST',
+            body: formData.toString(),
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            }
+        })
+        .then(response => response.text())
+        .then(result => {
+            console.log("Log berhasil dikirim ke Google Sheet:", result);
+        })
+        .catch(error => {
+            console.error("Gagal mengirim log ke Google Sheet:", error);
+        });
+    }
+
+    const lastRelayStatus = {};
+    function startRelayControl() {
+        for (let i = 1; i <= 4; i++) {
+            relayControlsContainer.innerHTML += createRelayCard(i);
+        }
+        for (let i = 1; i <= 4; i++) {
+            const statusText = document.getElementById(`status${i}`);
+            const toggleButton = document.getElementById(`btn${i}`);
+            const relayRef = db.ref(`/relay${i}`);
+            relayRef.on("value", (snapshot) => {
+                const state = snapshot.val();
+                if (state !== null) {
+                    connectionStatus.innerText = "📡Connected";
+                    connectionStatus.classList.remove('text-red-500');
+                    connectionStatus.classList.add('text-green-500');
+                }
+                statusText.innerText = state ? "ON" : "OFF";
+                toggleButton.classList.remove('bg-green-600', 'bg-red-600');
+                toggleButton.classList.add(state ? 'bg-green-600' : 'bg-red-600');
+                if (lastRelayStatus[i] !== undefined && lastRelayStatus[i] !== state) {
+                    const status = state ? "ON" : "OFF";
+                    sendDataToSheet({
+                        type: 'relay',
+                        relayId: `Relay ${i}`,
+                        status: status,
+                        timerStatus: 'Manual',
+                        timerOn: '',
+                        timerOff: ''
+                    });
+                }
+                lastRelayStatus[i] = state;
+            });
+            toggleButton.onclick = () => {
+                relayRef.get().then(snap => {
+                    const newState = !snap.val();
+                    relayRef.set(newState);
+                    const status = newState ? "ON" : "OFF";
+                    sendDataToSheet({
+                        type: 'relay',
+                        relayId: `Relay ${i}`,
+                        status: status,
+                        timerStatus: 'Manual',
+                        timerOn: '',
+                        timerOff: ''
+                    });
                 });
-        };
-    </script>
+            };
+        }
+    }
+
+    function startScheduleControl() {
+        for (let i = 1; i <= 4; i++) {
+            scheduleFormsContainer.innerHTML += createScheduleForm(i);
+        }
+        for (let i = 1; i <= 4; i++) {
+            const onInput = document.getElementById(`on-time-${i}`);
+            const offInput = document.getElementById(`off-time-${i}`);
+            const saveButton = document.getElementById(`save-schedule-${i}`);
+            const clearButton = document.getElementById(`clear-schedule-${i}`);
+            const scheduleStatus = document.getElementById(`schedule-status${i}`);
+            const schedRef = db.ref(`schedule/relay${i}`);
+            schedRef.on('value', snapshot => {
+                const data = snapshot.val();
+                if (data && data.on && data.off) {
+                    onInput.value = data.on;
+                    offInput.value = data.off;
+                    scheduleStatus.innerText = `ON ${data.on} | OFF ${data.off}`;
+                } else {
+                    onInput.value = "";
+                    offInput.value = "";
+                    scheduleStatus.innerText = "OFF";
+                }
+            });
+            saveButton.onclick = () => {
+                const onTime = onInput.value;
+                const offTime = offInput.value;
+                if (!onTime || !offTime) {
+                    alert('Silakan isi Waktu ON dan OFF.');
+                    return;
+                }
+                schedRef.set({ on: onTime, off: offTime }).then(() => {
+                    alert(`Jadwal Relay ${i} berhasil disimpan!`);
+                    sendDataToSheet({
+                        type: 'relay',
+                        relayId: `Relay ${i}`,
+                        status: `Scheduled`,
+                        timerStatus: 'SCHEDULED',
+                        timerOn: onTime,
+                        timerOff: offTime
+                    });
+                });
+            };
+            clearButton.onclick = () => {
+                schedRef.set(null).then(() => {
+                    alert(`Jadwal Relay ${i} berhasil dihapus.`);
+                    sendDataToSheet({
+                        type: 'relay',
+                        relayId: `Relay ${i}`,
+                        status: `Scheduled Cleared`,
+                        timerStatus: 'SCHEDULED',
+                        timerOn: '',
+                        timerOff: ''
+                    });
+                });
+            };
+        }
+    }
+
+    const logInterval = 60000;
+    function startSensorMonitor() {
+        const sensors = [{
+            id: "temp",
+            path: "sensors/temperature",
+            elementId: "temp-value",
+            unit: "°C"
+        }, {
+            id: "humidity",
+            path: "sensors/humidity",
+            elementId: "humidity-value",
+            unit: "%"
+        }, ];
+        const waterRef = db.ref("sensors/water_level");
+        const waterLevelCmElement = document.getElementById("water-level-cm");
+        const waterVolumeElement = document.getElementById("water-volume-value");
+        const waterGaugeElement = document.getElementById("volume-gauge");
+        sensors.forEach(sensor => {
+            const sensorRef = db.ref(sensor.path);
+            const element = document.getElementById(sensor.elementId);
+            sensorRef.on("value", (snapshot) => {
+                const value = snapshot.val();
+                element.innerText = value !== null ? `${value.toFixed(1)}${sensor.unit}` : `--${sensor.unit}`;
+            });
+        });
+        waterRef.on("value", (snapshot) => {
+            const value = snapshot.val();
+            if (value !== null) {
+                const volume = calculateVolume(value);
+                const percentage = calculatePercentage(value);
+                waterLevelCmElement.innerText = `${value.toFixed(1)} cm`;
+                waterVolumeElement.innerText = `${volume} L`;
+                waterGaugeElement.style.width = `${percentage}%`;
+            } else {
+                waterLevelCmElement.innerText = `-- cm`;
+                waterVolumeElement.innerText = `-- L`;
+                waterGaugeElement.style.width = `0%`;
+            }
+        });
+        setInterval(() => {
+            const tempValue = document.getElementById('temp-value').innerText.replace('°C', '');
+            const humidityValue = document.getElementById('humidity-value').innerText.replace('%', '');
+            if (tempValue !== '--' && humidityValue !== '--') {
+                sendDataToSheet({
+                    type: 'sensors-temp-hum',
+                    temperature: parseFloat(tempValue),
+                    humidity: parseFloat(humidityValue)
+                });
+            }
+        }, logInterval);
+        setInterval(() => {
+            const waterLevelCm = document.getElementById('water-level-cm').innerText.replace(' cm', '');
+            if (waterLevelCm !== '--') {
+                sendDataToSheet({
+                    type: 'sensors-water-level',
+                    waterLevel: parseFloat(waterLevelCm)
+                });
+            }
+        }, logInterval);
+    }
+
+    function calculateVolume(cm) {
+        const minLevel = 20;
+        const maxLevel = 120;
+        const maxVolume = 1000;
+        const clampedCm = Math.max(minLevel, Math.min(maxLevel, cm));
+        const volume = maxVolume - (maxVolume / (maxLevel - minLevel)) * (clampedCm - minLevel);
+        return Math.max(0, volume.toFixed(0));
+    }
+
+    function calculatePercentage(cm) {
+        const minLevel = 20;
+        const maxLevel = 120;
+        const clampedCm = Math.max(minLevel, Math.min(maxLevel, cm));
+        const percentage = ((maxLevel - clampedCm) / (maxLevel - minLevel)) * 100;
+        return Math.max(0, percentage.toFixed(0));
+    }
+
+    const historyRelayBtn = document.getElementById('history-relay-btn');
+    const historySensorsBtn = document.getElementById('history-sensors-btn');
+    const historyWaterBtn = document.getElementById('history-water-btn');
+    const relayChartContainer = document.getElementById('history-relay-chart-container');
+    const sensorsChartContainer = document.getElementById('history-sensors-chart-container');
+    const waterChartContainer = document.getElementById('history-water-chart-container');
+
+    const historyTableContainer = document.getElementById('history-table-container');
+    const relayFilterContainer = document.getElementById('relay-filter-container');
+    const relayFilterSelect = document.getElementById('relay-filter');
+    
+    let relayChart, sensorsChart, waterChart;
+    let currentData = {
+        relay: [],
+        sensors: [],
+        water: []
+    };
+
+    async function fetchData(sheetName) {
+        const url = `${getScriptURL}?sheet=${sheetName}`;
+        try {
+            const response = await fetch(url);
+            if (!response.ok) {
+                console.error(`Gagal mengambil data dari ${sheetName}:`, response.statusText);
+                return null;
+            }
+            const csvText = await response.text();
+            
+            const parsed = Papa.parse(csvText, { 
+                header: true, 
+                dynamicTyping: true, 
+                skipEmptyLines: true
+            });
+            
+            return parsed.data;
+        } catch (error) {
+            console.error("Kesalahan fetch:", error);
+            return null;
+        }
+    }
+
+    function showHistoryView(viewType, chartContainerId, sheetType) {
+        document.getElementById('chart-view-btn').classList.remove('active');
+        document.getElementById('table-view-btn').classList.remove('active');
+        document.getElementById(`${viewType}-view-btn`).classList.add('active');
+
+        if (viewType === 'chart') {
+            document.getElementById('history-chart-views').classList.remove('hidden');
+            document.getElementById('history-table-views').classList.add('hidden');
+            relayFilterContainer.classList.add('hidden');
+            showHistoryChart(chartContainerId);
+        } else if (viewType === 'table') {
+            document.getElementById('history-chart-views').classList.add('hidden');
+            document.getElementById('history-table-views').classList.remove('hidden');
+            if (sheetType === 'relay') {
+                relayFilterContainer.classList.remove('hidden');
+            } else {
+                relayFilterContainer.classList.add('hidden');
+            }
+            renderTable(currentData[sheetType], sheetType);
+        }
+    }
+
+    function showHistoryChart(chartContainerId) {
+        document.querySelectorAll('.chart-container').forEach(el => el.classList.add('hidden'));
+        document.querySelectorAll('.history-tab-btn').forEach(el => el.classList.remove('active'));
+        document.getElementById(chartContainerId).classList.remove('hidden');
+        document.getElementById('history-' + chartContainerId.replace('history-', '').replace('-chart-container', '') + '-btn').classList.add('active');
+    }
+
+    async function loadHistoryData() {
+        const relayData = await fetchData('Sheet1');
+        if (relayData) {
+            currentData.relay = relayData;
+            drawRelayChart(relayData.slice(-10));
+        }
+
+        const sensorsData = await fetchData('Sheet2');
+        if (sensorsData) {
+            currentData.sensors = sensorsData;
+            drawSensorsChart(sensorsData);
+        }
+
+        const waterData = await fetchData('Sheet3');
+        if (waterData) {
+            currentData.water = waterData;
+            drawWaterChart(waterData);
+        }
+    }
+
+    function drawRelayChart(data) {
+        if (relayChart) relayChart.destroy();
+        
+        if (!data || data.length === 0) {
+            return;
+        }
+        
+        const labels = data.map(row => {
+            const date = new Date(row.Timestamp);
+            return date.toLocaleString('id-ID');
+        });
+
+        const dataset = data.map(row => ({
+            x: new Date(row.Timestamp),
+            y: row.Status === "ON" ? 1 : 0
+        }));
+
+        relayChart = new Chart(document.getElementById('relayChart'), {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Status Relay',
+                    data: dataset,
+                    borderColor: 'rgb(75, 192, 192)',
+                    tension: 0.1,
+                    stepped: true
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        min: 0,
+                        max: 1,
+                        ticks: {
+                            callback: function(value) {
+                                return value === 1 ? 'ON' : 'OFF';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    function drawSensorsChart(data) {
+        if (sensorsChart) sensorsChart.destroy();
+        if (!data || data.length === 0) {
+            return;
+        }
+
+        const labels = data.map(row => new Date(row.Timestamp).toLocaleString('id-ID'));
+        
+        sensorsChart = new Chart(document.getElementById('sensorsChart'), {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Suhu (°C)',
+                    data: data.map(row => row['Temperature (°C)']),
+                    borderColor: 'rgb(255, 99, 132)',
+                    tension: 0.1,
+                    fill: false
+                }, {
+                    label: 'Kelembaban (%)',
+                    data: data.map(row => row['Humidity (%)']),
+                    borderColor: 'rgb(54, 162, 235)',
+                    tension: 0.1,
+                    fill: false
+                }]
+            },
+            options: { 
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: false
+                    }
+                }
+            }
+        });
+    }
+    
+    function drawWaterChart(data) {
+        if (waterChart) waterChart.destroy();
+        if (!data || data.length === 0) {
+            return;
+        }
+
+        const labels = data.map(row => new Date(row.Timestamp).toLocaleString('id-ID'));
+
+        waterChart = new Chart(document.getElementById('waterChart'), {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Water Level (cm)',
+                    data: data.map(row => row['Water Level (cm)']),
+                    borderColor: 'rgb(153, 102, 255)',
+                    tension: 0.1,
+                    fill: false
+                }]
+            },
+            options: { responsive: true }
+        });
+    }
+    
+    function renderTable(data, type) {
+        if (!data || data.length === 0) {
+            historyTableContainer.innerHTML = '<p class="text-white/50 text-center">Tidak ada data untuk ditampilkan.</p>';
+            return;
+        }
+    
+        const sortedData = [...data].sort((a, b) => new Date(b.Timestamp) - new Date(a.Timestamp));
+        let filteredData = sortedData;
+    
+        if (type === 'relay') {
+            const filterValue = relayFilterSelect.value;
+            if (filterValue !== 'all') {
+                filteredData = sortedData.filter(row => row['Relay ID'] === filterValue);
+            }
+        }
+    
+        let headers;
+        if (type === 'relay') {
+            headers = ['Timestamp', 'Relay ID', 'Status', 'Timer Status', 'Timer On', 'Timer Off'];
+        } else if (type === 'sensors') {
+            headers = ['Timestamp', 'Temperature (°C)', 'Humidity (%)'];
+        } else if (type === 'water') {
+            headers = ['Timestamp', 'Water Level (cm)'];
+        }
+    
+        const table = document.createElement('table');
+        table.className = 'w-full text-left text-white/80 table-auto';
+    
+        const thead = table.createTHead();
+        const headerRow = thead.insertRow();
+        headers.forEach(headerText => {
+            const th = document.createElement('th');
+            th.className = 'px-4 py-2 border-b-2 border-white/20 font-bold sticky top-0 bg-[#0c1236]';
+            th.textContent = headerText;
+            headerRow.appendChild(th);
+        });
+    
+        const tbody = table.createTBody();
+        filteredData.forEach(rowData => {
+            const row = tbody.insertRow();
+            headers.forEach(header => {
+                const cell = row.insertCell();
+                let cellData = rowData[header];
+                if (header === 'Timestamp') {
+                    cellData = new Date(cellData).toLocaleString('id-ID');
+                }
+                cell.className = 'px-4 py-2 border-b border-white/10';
+                cell.textContent = cellData;
+            });
+        });
+    
+        historyTableContainer.innerHTML = '';
+        historyTableContainer.appendChild(table);
+    }
+
+    historyRelayBtn.addEventListener('click', () => {
+        showHistoryView('chart', 'history-relay-chart-container', 'relay');
+        if (!relayChart) loadHistoryData();
+    });
+    historySensorsBtn.addEventListener('click', () => {
+        showHistoryView('chart', 'history-sensors-chart-container', 'sensors');
+        if (!sensorsChart) loadHistoryData();
+    });
+    historyWaterBtn.addEventListener('click', () => {
+        showHistoryView('chart', 'history-water-chart-container', 'water');
+        if (!waterChart) loadHistoryData();
+    });
+
+    document.getElementById('chart-view-btn').addEventListener('click', () => {
+        const activeTab = document.querySelector('.history-tab-btn.active').id;
+        if (activeTab === 'history-relay-btn') {
+            showHistoryView('chart', 'history-relay-chart-container', 'relay');
+        } else if (activeTab === 'history-sensors-btn') {
+            showHistoryView('chart', 'history-sensors-chart-container', 'sensors');
+        } else if (activeTab === 'history-water-btn') {
+            showHistoryView('chart', 'history-water-chart-container', 'water');
+        }
+    });
+
+    document.getElementById('table-view-btn').addEventListener('click', () => {
+        const activeTab = document.querySelector('.history-tab-btn.active').id;
+        if (activeTab === 'history-relay-btn') {
+            showHistoryView('table', 'history-relay-chart-container', 'relay');
+        } else if (activeTab === 'history-sensors-btn') {
+            showHistoryView('table', 'history-sensors-chart-container', 'sensors');
+        } else if (activeTab === 'history-water-btn') {
+            showHistoryView('table', 'history-water-chart-container', 'water');
+        }
+    });
+
+    relayFilterSelect.addEventListener('change', () => {
+        renderTable(currentData.relay, 'relay');
+    });
+</script>
 </body>
 </html>
-
-
