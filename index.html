@@ -76,13 +76,13 @@
 
         <div id="dashboard" class="hidden w-full max-w-6xl">
             <header class="flex justify-between items-center py-4 mb-6">
-                <h1 class="text-2xl font-bold">Relay Control System</h1>
+                <h1 class="text-2xl font-bold">Smart Control System</h1>
                 <span id="connection-status" class="text-sm text-red-500">📡Disconnected</span>
             </header>
 
             <div class="flex justify-start space-x-2 p-2 bg-gray-800/50 rounded-lg mb-6">
-                <button id="manual-tab" class="tab-btn px-4 py-2 rounded-lg transition-colors duration-200 active">Manual</button>
-                <button id="schedule-tab" class="tab-btn px-4 py-2 rounded-lg transition-colors duration-200">Jadwal</button>
+                <button id="manual-tab" class="tab-btn px-4 py-2 rounded-lg transition-colors duration-200 active">Manual On/Off</button>
+                <button id="schedule-tab" class="tab-btn px-4 py-2 rounded-lg transition-colors duration-200">Jadwal On/Off</button>
                 <button id="monitor-tab" class="tab-btn px-4 py-2 rounded-lg transition-colors duration-200">Monitor</button>
                 <button id="history-tab" class="tab-btn px-4 py-2 rounded-lg transition-colors duration-200">History</button>
                 <button id="logoutBtn" class="tab-btn px-4 py-2 rounded-lg transition-colors duration-200">Logout</button>
@@ -92,7 +92,7 @@
             </div>
 
             <div id="manual-section" class="p-8 rounded-lg shadow-xl bg-card">
-                <h2 class="text-xl font-bold mb-6">Manual Control</h2>
+                <h2 class="text-xl font-bold mb-6">Manual Control On/Off</h2>
                 <div id="relay-controls" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 </div>
             </div>
@@ -114,21 +114,36 @@
                         <h3 class="text-lg font-bold mb-2">Kelembaban</h3>
                         <p class="text-4xl font-bold" id="humidity-value">--%</p>
                     </div>
+                    
                     <div class="p-6 rounded-lg text-center bg-card">
-                        <h3 class="text-lg font-bold mb-2">Water Level</h3>
+                        <h3 class="text-lg font-bold mb-2">Water Storage</h3>
                         <p class="text-2xl font-bold text-gray-400" id="water-level-cm">-- cm</p>
-                        <p class="text-4xl font-bold" id="water-volume-value">-- L</p>
+                        <p class="text-4xl font-bold text-blue-400" id="water-volume-value">-- L</p>
                         <div class="mt-4">
                             <h3 class="text-sm font-semibold text-gray-400">Volume</h3>
                             <div class="gauge-bar-container mt-2">
                                 <div id="volume-gauge" class="gauge-bar-fill"></div>
                             </div>
                         </div>
+                        <p id="total-usage-today" class="text-lg font-semibold mt-4 text-green-400">Pemakaian Hari Ini: -- L</p>
+                        <p id="total-usage-monthly" class="text-base font-medium mt-2 text-yellow-400">Pemakaian Bulan Ini: -- L</p>
                     </div>
-                </div>
+                    </div>
             </div>
 
 <div id="history-section" class="hidden">
+    <div class="p-8 rounded-lg shadow-xl bg-card mb-6">
+        <h3 class="text-xl font-bold mb-4">Filter Log History</h3>
+        <div class="flex items-center space-x-4">
+            <label for="history-interval" class="text-white/80">Interval Data:</label>
+            <select id="history-interval" class="ml-2 p-2 rounded-lg focus:outline-none select-dark">
+                <option value="realtime">Realtime (Mentah/Terbaru)</option>
+                <option value="daily">Harian (DailyLog...)</option>
+                <option value="monthly">Bulanan (MonthlyLog)</option>
+            </select>
+        </div>
+    </div>
+    
     <div class="flex justify-center items-center space-x-4 mb-8">
         <button id="chart-view-btn" class="py-2 px-4 rounded-lg font-bold text-white transition-colors duration-300 bg-white/10 active">Grafik</button>
         <button id="table-view-btn" class="py-2 px-4 rounded-lg font-bold text-white transition-colors duration-300 bg-white/10">Tabel</button>
@@ -137,25 +152,25 @@
     <div class="flex justify-center space-x-4 mb-8">
         <button id="history-relay-btn" class="history-tab-btn py-2 px-4 rounded-lg font-bold text-white bg-blue-600 transition-colors duration-300 active">Relay</button>
         <button id="history-sensors-btn" class="history-tab-btn py-2 px-4 rounded-lg font-bold text-white bg-blue-600 transition-colors duration-300">Sensor</button>
-        <button id="history-water-btn" class="history-tab-btn py-2 px-4 rounded-lg font-bold text-white bg-blue-600 transition-colors duration-300">Water Level</button>
+        <button id="history-water-btn" class="history-tab-btn py-2 px-4 rounded-lg font-bold text-white bg-blue-600 transition-colors duration-300">Water Storage</button>
     </div>
 
     <div id="history-chart-views">
-        <div id="history-relay-chart-container" class="chart-container">
+        <div id="history-relay-chart-container" class="p-8 rounded-lg shadow-xl bg-card chart-container">
             <h3 class="text-xl font-bold text-white/90 text-center mb-4">Grafik Log Relay</h3>
             <canvas id="relayChart"></canvas>
         </div>
-        <div id="history-sensors-chart-container" class="chart-container hidden">
+        <div id="history-sensors-chart-container" class="p-8 rounded-lg shadow-xl bg-card chart-container hidden">
             <h3 class="text-xl font-bold text-white/90 text-center mb-4">Grafik Suhu & Kelembaban</h3>
             <canvas id="sensorsChart"></canvas>
         </div>
-        <div id="history-water-chart-container" class="chart-container hidden">
-            <h3 class="text-xl font-bold text-white/90 text-center mb-4">Grafik Water Level</h3>
+        <div id="history-water-chart-container" class="p-8 rounded-lg shadow-xl bg-card chart-container hidden">
+            <h3 class="text-xl font-bold text-white/90 text-center mb-4">Grafik Water Storage, Volume & Pemakaian</h3>
             <canvas id="waterChart"></canvas>
         </div>
     </div>
     
-    <div id="history-table-views" class="hidden">
+    <div id="history-table-views" class="hidden p-8 rounded-lg shadow-xl bg-card">
         <div id="relay-filter-container" class="mb-4 hidden">
          <label for="relay-filter" class="text-white/80">Filter Relay:</label>
          <select id="relay-filter" class="ml-2 p-2 rounded-lg focus:outline-none select-dark">
@@ -167,9 +182,13 @@
          </select>
         </div>
         <div id="history-table-container" class="table-scroll-container">
+            <p class="text-white/50 text-center p-4">Silakan pilih jenis data dan interval.</p>
         </div>
     </div>  
 </div>
+
+        </div>
+    </div>
 
 <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
@@ -185,7 +204,7 @@
         projectId: "tesdjaya",
         storageBucket: "tesdjaya.firebasestorage.app",
         messagingSenderId: "212621349012",
-        appId: "1:212621349012:web:327f9ba9fc1ccdb9546481",
+        appId: "1:212621349012:web:327f9ba9fc1ccdb954481",
         measurementId: "G-ENW0043THE"
     };
     firebase.initializeApp(firebaseConfig);
@@ -205,8 +224,9 @@
     const relayControlsContainer = document.getElementById('relay-controls');
     const scheduleFormsContainer = document.getElementById('schedule-forms');
 
-    const postScriptURL = 'https://script.google.com/macros/s/AKfycbyisPR7Mg6xSbjMrZw3YQ37jXdzGtBaLxfhM_xmGEOv2G0VACTy9qdBar_gFsDc0BPX/exec';
-    const getScriptURL = 'https://script.google.com/macros/s/AKfycbyisPR7Mg6xSbjMrZw3YQ37jXdzGtBaLxfhM_xmGEOv2G0VACTy9qdBar_gFsDc0BPX/exec';
+    // PASTIkan URL ini sudah di-Deploy ulang (Re-deploy) setelah update Apps Script
+    const postScriptURL = 'https://script.google.com/macros/s/AKfycbwy1kswiqjWhbo-xmS9uW0HtkTj1qcAL1GGcfeTj1VBB5_ca5Eh_vc6g3GS1IcpqPXV/exec';
+    const getScriptURL = 'https://script.google.com/macros/s/AKfycbwy1kswiqjWhbo-xmS9uW0HtkTj1qcAL1GGcfeTj1VBB5_ca5Eh_vc6g3GS1IcpqPXV/exec';
 
     const tabs = {
         'manual': manualSection,
@@ -229,13 +249,14 @@
         document.getElementById(`${sectionId}-tab`).classList.add('active');
         if (sectionId === 'history') {
             loadHistoryData();
+        } else if (sectionId === 'monitor') {
+             // Memuat data total liter (fungsi yang baru)
+            getWaterUsageData(); 
         }
     }
     
-    // Periksa status autentikasi saat halaman dimuat
     auth.onAuthStateChanged(user => {
         if (user) {
-            // Jika ada pengguna yang login, tampilkan dashboard
             loginForm.classList.add("hidden");
             dashboard.classList.remove("hidden");
             startRelayControl();
@@ -243,7 +264,6 @@
             startSensorMonitor();
             showSection('manual');
         } else {
-            // Jika tidak ada pengguna, tampilkan formulir login
             dashboard.classList.add("hidden");
             loginForm.classList.remove("hidden");
         }
@@ -308,6 +328,7 @@
         `;
     }
 
+    // Pembaruan skema data untuk log air (menambahkan volumeAir)
     function sendDataToSheet(data) {
         const formData = new URLSearchParams();
         const fullData = {
@@ -319,7 +340,8 @@
             timerOff: data.timerOff || '',
             temperature: data.temperature || '',
             humidity: data.humidity || '',
-            waterLevel: data.waterLevel || ''
+            waterLevel: data.waterLevel || '',
+            volumeAir: data.volumeAir || '', // BARU: Tambahan untuk volume air
         };
 
         for (const key in fullData) {
@@ -361,11 +383,14 @@
                 statusText.innerText = state ? "ON" : "OFF";
                 toggleButton.classList.remove('bg-green-600', 'bg-red-600');
                 toggleButton.classList.add(state ? 'bg-green-600' : 'bg-red-600');
+                
+                // Perbaikan: Pastikan Relay ID dikirim saat status berubah
                 if (lastRelayStatus[i] !== undefined && lastRelayStatus[i] !== state) {
                     const status = state ? "ON" : "OFF";
                     sendDataToSheet({
                         type: 'relay',
-                        relayId: `Relay ${i}`,
+                        // FIX: Relay ID selalu ada
+                        relayId: `Relay ${i}`, 
                         status: status,
                         timerStatus: 'Manual',
                         timerOn: '',
@@ -381,7 +406,8 @@
                     const status = newState ? "ON" : "OFF";
                     sendDataToSheet({
                         type: 'relay',
-                        relayId: `Relay ${i}`,
+                        // FIX: Relay ID selalu ada
+                        relayId: `Relay ${i}`, 
                         status: status,
                         timerStatus: 'Manual',
                         timerOn: '',
@@ -450,7 +476,9 @@
         }
     }
 
-    const logInterval = 60000;
+    const logInterval = 60000; // Log setiap 1 menit
+    let currentWaterLevel = null;
+    
     function startSensorMonitor() {
         const sensors = [{
             id: "temp",
@@ -467,6 +495,11 @@
         const waterLevelCmElement = document.getElementById("water-level-cm");
         const waterVolumeElement = document.getElementById("water-volume-value");
         const waterGaugeElement = document.getElementById("volume-gauge");
+        
+        // Elemen Total Usage (Sudah ada di HTML baru)
+        const totalUsageTodayElement = document.getElementById("total-usage-today");
+        const totalUsageMonthlyElement = document.getElementById("total-usage-monthly");
+
         sensors.forEach(sensor => {
             const sensorRef = db.ref(sensor.path);
             const element = document.getElementById(sensor.elementId);
@@ -475,8 +508,10 @@
                 element.innerText = value !== null ? `${value.toFixed(1)}${sensor.unit}` : `--${sensor.unit}`;
             });
         });
+        
         waterRef.on("value", (snapshot) => {
             const value = snapshot.val();
+            currentWaterLevel = value; // Simpan nilai level
             if (value !== null) {
                 const volume = calculateVolume(value);
                 const percentage = calculatePercentage(value);
@@ -489,7 +524,12 @@
                 waterGaugeElement.style.width = `0%`;
             }
         });
+        
+        // Panggil fungsi total volume
+        getWaterUsageData(); 
+        
         setInterval(() => {
+            // Log Suhu & Kelembaban (Sheet 2)
             const tempValue = document.getElementById('temp-value').innerText.replace('°C', '');
             const humidityValue = document.getElementById('humidity-value').innerText.replace('%', '');
             if (tempValue !== '--' && humidityValue !== '--') {
@@ -500,16 +540,56 @@
                 });
             }
         }, logInterval);
+        
+        // Interval logging air yang diperbarui (Mengirim WaterLevel & VolumeAir)
         setInterval(() => {
-            const waterLevelCm = document.getElementById('water-level-cm').innerText.replace(' cm', '');
-            if (waterLevelCm !== '--') {
+            if (currentWaterLevel !== null) {
+                const currentVolume = parseFloat(calculateVolume(currentWaterLevel));
+                
+                // Log Volume Air (Sheet 3)
                 sendDataToSheet({
-                    type: 'sensors-water-level',
-                    waterLevel: parseFloat(waterLevelCm)
+                    type: 'sensors-water-volume', // Type baru untuk Apps Script
+                    waterLevel: currentWaterLevel,
+                    volumeAir: currentVolume // Mengirim volume air
+                    // usageLiter & pumpStatus akan dihitung oleh Apps Script
                 });
             }
         }, logInterval);
+        
+        // Update total volume harian setiap 5 menit
+        setInterval(getWaterUsageData, 300000); 
     }
+    
+    // Fungsi baru untuk mendapatkan data pemakaian air (Total Harian & Bulanan)
+    async function getWaterUsageData() {
+        const todayElement = document.getElementById("total-usage-today");
+        const monthlyElement = document.getElementById("total-usage-monthly");
+        if (!todayElement || !monthlyElement) return;
+
+        todayElement.innerText = `Pemakaian Hari Ini: Loading...`;
+        monthlyElement.innerText = `Pemakaian Bulan Ini: Loading...`;
+
+        // URL dengan parameter untuk Apps Script agar menghitung pemakaian air
+        const url = `${getScriptURL}?action=get_water_usage_data`; 
+        
+        try {
+            const response = await fetch(url);
+            const data = await response.json(); 
+            
+            if (data && data.todayUsage !== undefined && data.monthlyUsage !== undefined) {
+                todayElement.innerText = `Pemakaian Hari Ini: ${data.todayUsage} L`;
+                monthlyElement.innerText = `Pemakaian Bulan Ini: ${data.monthlyUsage} L`;
+            } else {
+                todayElement.innerText = `Pemakaian Hari Ini: 0 L`;
+                monthlyElement.innerText = `Pemakaian Bulan Ini: 0 L`;
+            }
+        } catch (error) {
+            console.error("Gagal mendapatkan data pemakaian air:", error);
+            todayElement.innerText = `Pemakaian Hari Ini: - L (Error)`; 
+            monthlyElement.innerText = `Pemakaian Bulan Ini: - L (Error)`;
+        }
+    }
+
 
     function calculateVolume(cm) {
         const minLevel = 20;
@@ -599,10 +679,11 @@
     }
 
     async function loadHistoryData() {
-        const relayData = await fetchData('Sheet1');
+        // Panggil fetchData tanpa filter interval untuk saat ini, menggunakan data 'realtime'
+        const relayData = await fetchData('Sheet1'); 
         if (relayData) {
             currentData.relay = relayData;
-            drawRelayChart(relayData.slice(-10));
+            drawRelayChart(relayData.slice(-50));
         }
 
         const sensorsData = await fetchData('Sheet2');
@@ -626,12 +707,12 @@
         }
         
         const labels = data.map(row => {
-            const date = new Date(row.Timestamp);
-            return date.toLocaleString('id-ID');
+            const date = new Date(row.Tanggal); 
+            return isNaN(date) ? '--' : date.toLocaleString('id-ID');
         });
 
         const dataset = data.map(row => ({
-            x: new Date(row.Timestamp),
+            x: new Date(row.Tanggal), 
             y: row.Status === "ON" ? 1 : 0
         }));
 
@@ -670,7 +751,7 @@
             return;
         }
 
-        const labels = data.map(row => new Date(row.Timestamp).toLocaleString('id-ID'));
+        const labels = data.map(row => new Date(row.Tanggal).toLocaleString('id-ID'));
         
         sensorsChart = new Chart(document.getElementById('sensorsChart'), {
             type: 'line',
@@ -678,13 +759,13 @@
                 labels: labels,
                 datasets: [{
                     label: 'Suhu (°C)',
-                    data: data.map(row => row['Temperature (°C)']),
+                    data: data.map(row => row['Temperature']),
                     borderColor: 'rgb(255, 99, 132)',
                     tension: 0.1,
                     fill: false
                 }, {
                     label: 'Kelembaban (%)',
-                    data: data.map(row => row['Humidity (%)']),
+                    data: data.map(row => row['Humidity']),
                     borderColor: 'rgb(54, 162, 235)',
                     tension: 0.1,
                     fill: false
@@ -707,21 +788,67 @@
             return;
         }
 
-        const labels = data.map(row => new Date(row.Timestamp).toLocaleString('id-ID'));
+        const labels = data.map(row => new Date(row.Tanggal).toLocaleString('id-ID'));
 
         waterChart = new Chart(document.getElementById('waterChart'), {
             type: 'line',
             data: {
                 labels: labels,
                 datasets: [{
-                    label: 'Water Level (cm)',
-                    data: data.map(row => row['Water Level (cm)']),
+                    label: 'Level(cm)',
+                    data: data.map(row => row['WaterLevel']),
                     borderColor: 'rgb(153, 102, 255)',
                     tension: 0.1,
-                    fill: false
+                    fill: false,
+                    yAxisID: 'y'
+                }, {
+                    label: 'Volume(L)',
+                    data: data.map(row => row['VolumeAir']),
+                    borderColor: 'rgb(54, 162, 235)',
+                    tension: 0.1,
+                    fill: false,
+                    yAxisID: 'y1' 
+                },
+                // BARU: Tambahan data pemakaian di chart
+                {
+                    label: 'Out(L)',
+                    data: data.map(row => row['UsageLiter']), // Ambil data Pemakaian dari Apps Script (Sheet3)
+                    borderColor: 'rgb(255, 206, 86)',
+                    tension: 0.1,
+                    fill: false,
+                    yAxisID: 'y1' 
                 }]
             },
-            options: { responsive: true }
+            options: { 
+                responsive: true,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                scales: {
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: {
+                            display: true,
+                            text: 'Level (cm)'
+                        }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: {
+                            display: true,
+                            text: 'Volume/Pemakaian (L)'
+                        },
+                        grid: {
+                            drawOnChartArea: false, 
+                        },
+                    }
+                }
+            }
         });
     }
     
@@ -731,23 +858,31 @@
             return;
         }
     
-        const sortedData = [...data].sort((a, b) => new Date(b.Timestamp) - new Date(a.Timestamp));
+        const sortedData = [...data].sort((a, b) => new Date(b.Tanggal) - new Date(a.Tanggal));
         let filteredData = sortedData;
     
         if (type === 'relay') {
             const filterValue = relayFilterSelect.value;
             if (filterValue !== 'all') {
+                // Gunakan kunci 'Relay ID'
                 filteredData = sortedData.filter(row => row['Relay ID'] === filterValue);
             }
         }
     
         let headers;
+        let keys; 
+        
         if (type === 'relay') {
-            headers = ['Timestamp', 'Relay ID', 'Status', 'Timer Status', 'Timer On', 'Timer Off'];
+            // FIX: Menggunakan kunci 'Relay ID' (sesuai header Sheet1)
+            headers = ['Tanggal', 'Relay ID', 'Status', 'Timer Status', 'Timer On', 'Timer Off'];
+            keys = ['Tanggal', 'RelayID', 'Status', 'TimerStatus', 'TimerOn', 'TimerOff'];
         } else if (type === 'sensors') {
-            headers = ['Timestamp', 'Temperature (°C)', 'Humidity (%)'];
+            headers = ['Tanggal', 'Temperature (°C)', 'Humidity (%)'];
+            keys = ['Tanggal', 'Temperature', 'Humidity'];
         } else if (type === 'water') {
-            headers = ['Timestamp', 'Water Level (cm)'];
+            // FIX: Tambah kolom Pemakaian Liter dan Status Pompa (sesuai header Sheet3)
+            headers = ['Tanggal', 'Level(cm)', 'Volume(L)', 'Out(L)', 'Pompa'];
+            keys = ['Tanggal', 'WaterLevel', 'VolumeAir', 'UsageLiter', 'PumpStatus']; 
         }
     
         const table = document.createElement('table');
@@ -765,12 +900,28 @@
         const tbody = table.createTBody();
         filteredData.forEach(rowData => {
             const row = tbody.insertRow();
-            headers.forEach(header => {
+            
+            keys.forEach(key => {
                 const cell = row.insertCell();
-                let cellData = rowData[header];
-                if (header === 'Timestamp') {
-                    cellData = new Date(cellData).toLocaleString('id-ID');
+                let cellData;
+                
+                if (key === 'Tanggal') {
+                    let dateValue = rowData[key]; 
+                    if (dateValue) {
+                       const date = new Date(dateValue);
+                       cellData = isNaN(date.getTime()) ? '--' : date.toLocaleString('id-ID'); 
+                    } else {
+                       cellData = '--';
+                    }
+                } else {
+                    cellData = rowData[key];
                 }
+                
+                // Penanganan Data Kosong
+                if (cellData === null || cellData === undefined || cellData === "") {
+                    cellData = '-';
+                }
+                
                 cell.className = 'px-4 py-2 border-b border-white/10';
                 cell.textContent = cellData;
             });
@@ -782,37 +933,27 @@
 
     historyRelayBtn.addEventListener('click', () => {
         showHistoryView('chart', 'history-relay-chart-container', 'relay');
-        if (!relayChart) loadHistoryData();
+        loadHistoryData(); 
     });
     historySensorsBtn.addEventListener('click', () => {
         showHistoryView('chart', 'history-sensors-chart-container', 'sensors');
-        if (!sensorsChart) loadHistoryData();
+        loadHistoryData();
     });
     historyWaterBtn.addEventListener('click', () => {
         showHistoryView('chart', 'history-water-chart-container', 'water');
-        if (!waterChart) loadHistoryData();
+        loadHistoryData();
     });
 
     document.getElementById('chart-view-btn').addEventListener('click', () => {
-        const activeTab = document.querySelector('.history-tab-btn.active').id;
-        if (activeTab === 'history-relay-btn') {
-            showHistoryView('chart', 'history-relay-chart-container', 'relay');
-        } else if (activeTab === 'history-sensors-btn') {
-            showHistoryView('chart', 'history-sensors-chart-container', 'sensors');
-        } else if (activeTab === 'history-water-btn') {
-            showHistoryView('chart', 'history-water-chart-container', 'water');
-        }
+        const activeTab = document.querySelector('.history-tab-btn.active').id.replace('history-', '').replace('-btn', '');
+        const chartContainerId = `history-${activeTab}-chart-container`;
+        showHistoryView('chart', chartContainerId, activeTab);
     });
 
     document.getElementById('table-view-btn').addEventListener('click', () => {
-        const activeTab = document.querySelector('.history-tab-btn.active').id;
-        if (activeTab === 'history-relay-btn') {
-            showHistoryView('table', 'history-relay-chart-container', 'relay');
-        } else if (activeTab === 'history-sensors-btn') {
-            showHistoryView('table', 'history-sensors-chart-container', 'sensors');
-        } else if (activeTab === 'history-water-btn') {
-            showHistoryView('table', 'history-water-chart-container', 'water');
-        }
+        const activeTab = document.querySelector('.history-tab-btn.active').id.replace('history-', '').replace('-btn', '');
+        const chartContainerId = `history-${activeTab}-chart-container`;
+        showHistoryView('table', chartContainerId, activeTab);
     });
 
     relayFilterSelect.addEventListener('change', () => {
